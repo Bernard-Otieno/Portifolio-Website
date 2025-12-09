@@ -15,6 +15,35 @@
         .animate-spin {
             animation: spin 1s linear infinite;
         }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+        .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+        .stagger-5 { animation-delay: 0.5s; opacity: 0; }
+        .stagger-6 { animation-delay: 0.6s; opacity: 0; }
+        html {
+            scroll-behavior: smooth;
+        }
     </style>
 </head>
 <body>
@@ -105,8 +134,50 @@
             const [loading, setLoading] = useState(false);
             const [introGenerated, setIntroGenerated] = useState(false);
             const [introText, setIntroText] = useState('');
+            const [isVisible, setIsVisible] = useState({});
+            const [typingText, setTypingText] = useState({});
+            const [isTyping, setIsTyping] = useState({});
 
             const WORKER_URL = 'https://bernard-portfolio-api.bernard20otieno01.workers.dev/';
+
+            // Typing animation effect
+            const typeText = (text, sectionId) => {
+                setIsTyping(prev => ({...prev, [sectionId]: true}));
+                let index = 0;
+                setTypingText(prev => ({...prev, [sectionId]: ''}));
+                
+                const interval = setInterval(() => {
+                    if (index < text.length) {
+                        setTypingText(prev => ({
+                            ...prev,
+                            [sectionId]: text.substring(0, index + 1)
+                        }));
+                        index++;
+                    } else {
+                        clearInterval(interval);
+                        setIsTyping(prev => ({...prev, [sectionId]: false}));
+                    }
+                }, 15); // Speed of typing (15ms per character)
+            };
+
+            // Intersection Observer for scroll animations
+            useEffect(() => {
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                setIsVisible(prev => ({...prev, [entry.target.id]: true}));
+                            }
+                        });
+                    },
+                    { threshold: 0.1 }
+                );
+
+                const elements = document.querySelectorAll('[data-animate]');
+                elements.forEach((el) => observer.observe(el));
+
+                return () => observer.disconnect();
+            }, []);
 
             const systemPrompt = `You are Bernard Otieno speaking directly to visitors about your professional journey. Write in an engaging, first-person narrative style (using "I", "my", "me") that showcases your skills and experience.
 
@@ -189,16 +260,22 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                     });
 
                     const data = await response.json();
+                    const content = data.choices[0].message.content;
                     setGeneratedContent(prev => ({
                         ...prev,
-                        [section]: data.choices[0].message.content
+                        [section]: content
                     }));
+                    
+                    // Start typing animation
+                    typeText(content, section);
                 } catch (error) {
                     console.error('Error:', error);
+                    const errorMsg = 'Unable to generate content at this time. Please try again later.';
                     setGeneratedContent(prev => ({
                         ...prev,
-                        [section]: 'Unable to generate content at this time. Please try again later.'
+                        [section]: errorMsg
                     }));
+                    typeText(errorMsg, section);
                 } finally {
                     setLoading(false);
                 }
@@ -254,7 +331,7 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                                         <p className="text-sm text-gray-600">IT Specialist & Developer</p>
                                     </div>
                                 </div>
-                                <a href="mailto:Bernard20otieno01@gmail.com" 
+                                <a href="#contact" 
                                    className="px-6 py-2 bg-gradient-to-r from-red-600 via-black to-green-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
                                     Contact
                                 </a>
@@ -265,7 +342,7 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                     {/* Hero Section */}
                     <section className="max-w-6xl mx-auto px-6 py-20">
                         <div className="space-y-8">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-50 via-gray-50 to-green-50 rounded-full border border-gray-200">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-50 via-gray-50 to-green-50 rounded-full border border-gray-200 fade-in-up">
                                 <Sparkles className="w-4 h-4" gradient={true} />
                                 <span className="text-sm font-medium bg-gradient-to-r from-red-600 via-black to-green-600 bg-clip-text text-transparent">
                                     AI-Powered Portfolio
@@ -273,7 +350,7 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                             </div>
                             
                             <div className="space-y-4">
-                                <h2 className="text-6xl font-bold text-gray-900 leading-tight">
+                                <h2 className="text-6xl font-bold text-gray-900 leading-tight fade-in-up stagger-1">
                                     Building the Future,
                                     <br />
                                     <span className="bg-gradient-to-r from-red-600 via-black to-green-600 bg-clip-text text-transparent">
@@ -283,19 +360,19 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                             </div>
 
                             {loading && !introGenerated ? (
-                                <div className="flex items-center gap-3 text-gray-600">
+                                <div className="flex items-center gap-3 text-gray-600 fade-in-up stagger-2">
                                     <Loader2 className="w-5 h-5" gradient={true} />
                                     <span>AI is crafting my story...</span>
                                 </div>
                             ) : (
-                                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
+                                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200 fade-in-up stagger-2">
                                     <p className="text-lg text-gray-700 leading-relaxed whitespace-pre-line">
                                         {introText || 'Loading...'}
                                     </p>
                                 </div>
                             )}
 
-                            <div className="flex flex-wrap gap-4 pt-4">
+                            <div className="flex flex-wrap gap-4 pt-4 fade-in-up stagger-3">
                                 <div className="px-4 py-2 bg-gray-100 rounded-lg">
                                     <span className="text-sm font-medium text-gray-700">React.js</span>
                                 </div>
@@ -316,11 +393,11 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                     </section>
 
                     {/* Education & Certifications */}
-                    <section className="max-w-6xl mx-auto px-6 py-16 bg-gray-50">
+                    <section id="education-section" data-animate className="max-w-6xl mx-auto px-6 py-16 bg-gray-50">
                         <div className="max-w-4xl mx-auto">
-                            <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">Education & Certifications</h3>
+                            <h3 className={`text-3xl font-bold text-gray-900 mb-8 text-center ${isVisible['education-section'] ? 'fade-in-up' : 'opacity-0'}`}>Education & Certifications</h3>
                             <div className="grid md:grid-cols-2 gap-6">
-                                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                                <div className={`bg-white rounded-xl p-6 border border-gray-200 ${isVisible['education-section'] ? 'fade-in-up stagger-1' : 'opacity-0'}`}>
                                     <div className="w-12 h-12 bg-gradient-to-r from-red-600 via-black to-green-600 rounded-lg flex items-center justify-center mb-4">
                                         <span className="text-white font-bold">SU</span>
                                     </div>
@@ -329,7 +406,7 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                                     <p className="text-sm text-gray-500 mt-1">2020 - 2023 | Grade: B</p>
                                 </div>
                                 
-                                <div className="bg-white rounded-xl p-6 border border-gray-200 space-y-3">
+                                <div className={`bg-white rounded-xl p-6 border border-gray-200 space-y-3 ${isVisible['education-section'] ? 'fade-in-up stagger-2' : 'opacity-0'}`}>
                                     <h4 className="font-bold text-gray-900 mb-3">Certifications</h4>
                                     <div className="flex items-start gap-3">
                                         <div className="w-2 h-2 bg-red-600 rounded-full mt-2"></div>
@@ -358,8 +435,8 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                     </section>
 
                     {/* Interactive Sections */}
-                    <section className="max-w-6xl mx-auto px-6 py-16">
-                        <h3 className="text-3xl font-bold text-gray-900 mb-8">
+                    <section id="journey-section" data-animate className="max-w-6xl mx-auto px-6 py-16">
+                        <h3 className={`text-3xl font-bold text-gray-900 mb-8 ${isVisible['journey-section'] ? 'fade-in-up' : 'opacity-0'}`}>
                             Explore the Journey
                             <span className="block text-lg font-normal text-gray-600 mt-2">
                                 Click to let AI reveal more about each experience
@@ -367,28 +444,28 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                         </h3>
 
                         {/* Stats Bar */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-                            <div className="bg-gradient-to-br from-red-50 to-white rounded-xl p-4 border border-red-100">
+                        <div className={`grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 ${isVisible['journey-section'] ? '' : 'opacity-0'}`}>
+                            <div className={`bg-gradient-to-br from-red-50 to-white rounded-xl p-4 border border-red-100 ${isVisible['journey-section'] ? 'fade-in-up stagger-1' : ''}`}>
                                 <div className="text-2xl font-bold text-red-600">3+</div>
                                 <div className="text-sm text-gray-600">Years Experience</div>
                             </div>
-                            <div className="bg-gradient-to-br from-green-50 to-white rounded-xl p-4 border border-green-100">
+                            <div className={`bg-gradient-to-br from-green-50 to-white rounded-xl p-4 border border-green-100 ${isVisible['journey-section'] ? 'fade-in-up stagger-2' : ''}`}>
                                 <div className="text-2xl font-bold text-green-600">10+</div>
                                 <div className="text-sm text-gray-600">Technologies</div>
                             </div>
-                            <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border border-gray-200">
+                            <div className={`bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border border-gray-200 ${isVisible['journey-section'] ? 'fade-in-up stagger-3' : ''}`}>
                                 <div className="text-2xl font-bold text-gray-900">5+</div>
                                 <div className="text-sm text-gray-600">Major Projects</div>
                             </div>
-                            <div className="bg-gradient-to-br from-red-50 to-white rounded-xl p-4 border border-red-100">
+                            <div className={`bg-gradient-to-br from-red-50 to-white rounded-xl p-4 border border-red-100 ${isVisible['journey-section'] ? 'fade-in-up stagger-4' : ''}`}>
                                 <div className="text-2xl font-bold text-red-600">100%</div>
                                 <div className="text-sm text-gray-600">Passion Driven</div>
                             </div>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6">
-                            {sections.map((section) => (
-                                <div key={section.id} className="group">
+                            {sections.map((section, index) => (
+                                <div key={section.id} className={`group ${isVisible['journey-section'] ? 'fade-in-up' : 'opacity-0'}`} style={{animationDelay: `${0.5 + index * 0.1}s`}}>
                                     <div 
                                         onClick={() => !generatedContent[section.id] && generateContent(section.id, section.prompt)}
                                         className={`bg-white rounded-2xl border-2 p-6 transition-all cursor-pointer ${
@@ -420,7 +497,8 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                                         ) : generatedContent[section.id] ? (
                                             <div className="space-y-4">
                                                 <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                                                    {generatedContent[section.id]}
+                                                    {typingText[section.id] || generatedContent[section.id]}
+                                                    {isTyping[section.id] && <span className="inline-block w-1 h-5 bg-gray-700 ml-1 animate-pulse"></span>}
                                                 </p>
                                                 <div className="pt-4 border-t border-gray-100">
                                                     <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -439,39 +517,37 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                     </section>
 
                     {/* Contact Section */}
-                    <section className="max-w-6xl mx-auto px-6 py-16">
-                        <div className="bg-gradient-to-r from-red-600 via-black to-green-600 rounded-3xl p-12 text-center text-white">
+                    <section id="contact" data-animate className="max-w-6xl mx-auto px-6 py-16">
+                        <div className={`bg-gradient-to-r from-red-600 via-black to-green-600 rounded-3xl p-12 text-center text-white ${isVisible['contact'] ? 'fade-in-up' : 'opacity-0'}`}>
                             <h3 className="text-3xl font-bold mb-4">Let's Build Something Amazing</h3>
                             <p className="text-xl mb-8 text-red-100">
                                 Ready to collaborate on your next project?
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-                                <a href="mailto:Bernard20otieno01@gmail.com" 
-                                   onClick={(e) => {
-                                       // Fallback: copy email if mailto doesn't work
-                                       if (!navigator.userAgent.includes('iPhone') && !navigator.userAgent.includes('Android')) {
-                                           const email = 'Bernard20otieno01@gmail.com';
-                                           if (navigator.clipboard) {
-                                               e.preventDefault();
-                                               navigator.clipboard.writeText(email).then(() => {
-                                                   alert('Email copied to clipboard: ' + email);
-                                               }).catch(() => {
-                                                   window.location.href = 'mailto:' + email;
-                                               });
-                                           }
-                                       }
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <button
+                                   onClick={() => {
+                                       const email = 'Bernard20otieno01@gmail.com';
+                                       navigator.clipboard.writeText(email).then(() => {
+                                           alert('✅ Email copied to clipboard!\n' + email);
+                                       }).catch(() => {
+                                           window.location.href = 'mailto:' + email;
+                                       });
                                    }}
-                                   className="px-8 py-3 bg-white text-red-600 rounded-xl font-medium hover:shadow-xl transition-all">
-                                    Email Me
-                                </a>
-                                <a href="tel:+254743941435" 
-                                   className="px-8 py-3 bg-white/10 backdrop-blur text-white rounded-xl font-medium hover:bg-white/20 transition-all border border-white/20">
-                                    Call: 0743941435
-                                </a>
-                            </div>
-                            <div className="text-sm text-red-100">
-                                <p>📧 Bernard20otieno01@gmail.com</p>
-                                <p className="mt-1">📱 +254 743 941 435</p>
+                                   className="px-8 py-3 bg-white text-red-600 rounded-xl font-medium hover:shadow-xl transition-all cursor-pointer">
+                                    📧 Copy Email
+                                </button>
+                                <button
+                                   onClick={() => {
+                                       const phone = '+254743941435';
+                                       navigator.clipboard.writeText(phone).then(() => {
+                                           alert('✅ Phone number copied to clipboard!\n' + phone);
+                                       }).catch(() => {
+                                           window.location.href = 'tel:' + phone;
+                                       });
+                                   }}
+                                   className="px-8 py-3 bg-white/10 backdrop-blur text-white rounded-xl font-medium hover:bg-white/20 transition-all border border-white/20 cursor-pointer">
+                                    📱 Copy Phone
+                                </button>
                             </div>
                         </div>
                     </section>

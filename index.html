@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bernard Otieno - IT Specialist & Developer</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Lucide React Icons (inline SVG)
+                    const Sparkles = ({ className = "w-6 h-6", gradient = false }) => (
+            <svg className={className} fill="none" stroke={gradient ? "url(#kenyan-gradient)" : "currentColor"} viewBox="0 0 24 24">
+                {gradient && (
+                    <defs>
+                        <linearGradient id="kenyan-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#dc2626" />
+                            <stop offset="50%" stopColor="#000000" />
+                            <stop offset="100%" stopColor="#16a34a" />
+                        </linearGradient>
+                    </defs>
+                )}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+        );
+
+        const ChevronRight = ({ className = "w-6 h-6", gradient = false }) => (
+            <svg className={className} fill="none" stroke={gradient ? "url(#kenyan-gradient-chevron)" : "currentColor"} viewBox="0 0 24 24">
+                {gradient && (
+                    <defs>
+                        <linearGradient id="kenyan-gradient-chevron" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#dc2626" />
+                            <stop offset="50%" stopColor="#000000" />
+                            <stop offset="100%" stopColor="#16a34a" />
+                        </linearGradient>
+                    </defs>
+                )}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+        );
+
+        const Loader2 = ({ className = "w-6 h-6", gradient = false }) => (
+            <svg className={`${className} animate-spin`} fill="none" stroke={gradient ? "url(#kenyan-gradient-loader)" : "currentColor"} viewBox="0 0 24 24">
+                {gradient && (
+                    <defs>
+                        <linearGradient id="kenyan-gradient-loader" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#dc2626" />
+                            <stop offset="50%" stopColor="#000000" />
+                            <stop offset="100%" stopColor="#16a34a" />
+                        </linearGradient>
+                    </defs>
+                )}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+        );
+
+        const Terminal = ({ className = "w-6 h-6", gradient = false }) => (
+            <svg className={className} fill="none" stroke={gradient ? "url(#kenyan-gradient-terminal)" : "currentColor"} viewBox="0 0 24 24">
+                {gradient && (
+                    <defs>
+                        <linearGradient id="kenyan-gradient-terminal" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#dc2626" />
+                            <stop offset="50%" stopColor="#000000" />
+                            <stop offset="100%" stopColor="#16a34a" />
+                        </linearGradient>
+                    </defs>
+                )}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        );
+
+        const Zap = ({ className = "w-6 h-6", gradient = false }) => (
+            <svg className={className} fill="none" stroke={gradient ? "url(#kenyan-gradient-zap)" : "currentColor"} viewBox="0 0 24 24">
+                {gradient && (
+                    <defs>
+                        <linearGradient id="kenyan-gradient-zap" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#dc2626" />
+                            <stop offset="50%" stopColor="#000000" />
+                            <stop offset="100%" stopColor="#16a34a" />
+                        </linearGradient>
+                    </defs>
+                )}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+        );
+
+        const Portfolio = () => {
+            const [activeSection, setActiveSection] = useState(null);
+            const [generatedContent, setGeneratedContent] = useState({});
+            const [loading, setLoading] = useState(false);
+            const [introGenerated, setIntroGenerated] = useState(false);
+            const [introText, setIntroText] = useState('');
+
+            const WORKER_URL = 'https://bernard-portfolio-api.bernard20otieno01.workers.dev/';
+
+            const systemPrompt = `You are Bernard Otieno speaking directly to visitors about your professional journey. Write in an engaging, first-person narrative style (using "I", "my", "me") that showcases your skills and experience.
+
+BERNARD'S INFORMATION (Write as "I"):
+- Current: I'm a Junior Developer at Becor Designs (July 2024 - Present)
+- Previous: I was a Technology Intern at Safaricom PLC (March - October 2025)
+- Education: I have a Bachelor of Business Information Technology from Strathmore University (2020-2023)
+
+MY SKILLS:
+- Programming: C++, C#, Java, Python, R, Kotlin
+- Web: HTML, CSS, JavaScript, PHP, React.js, WordPress
+- Other: Cisco Networking, Data Engineering, ML, Cloud Technologies
+
+MY EXPERIENCE:
+At Safaricom: I supported data engineering initiatives, developed ML models, worked with cloud technologies, and created technical documentation
+At Becor Designs: I manage and optimize WordPress websites, troubleshoot complex issues, and develop modern web solutions
+At Kenyatta University Hospital: I deployed software systems, developed websites, and managed databases
+
+MY ACHIEVEMENTS:
+- Completed CISCO Networking Course, Harvard CS50, Website Design & UX/UI course
+- Captained my volleyball team to semifinals
+- Earned Data Protection certification
+
+Write 2-3 compelling paragraphs in first person that tell my story in an inspiring, professional way. Focus on my journey, technical expertise, and problem-solving abilities. Make it feel personal and engaging.`;
+
+            const generateIntro = async () => {
+                if (introGenerated || loading) return;
+                
+                setLoading(true);
+                try {
+                    const response = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: 'llama-3.3-70b-versatile',
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: 'Write an engaging introduction about yourself as an IT specialist and developer. Focus on your passion for technology, your journey from Strathmore University to working at companies like Safaricom and Becor Designs, and what drives you as a developer. Write in first person.' }
+                            ],
+                            temperature: 0.8,
+                            max_tokens: 400
+                        })
+                    });
+
+                    const data = await response.json();
+                    setIntroText(data.choices[0].message.content);
+                    setIntroGenerated(true);
+                } catch (error) {
+                    console.error('Error:', error);
+                    setIntroText('I\'m an innovative IT specialist with a passion for building transformative digital solutions. With my Bachelor\'s degree in Business Information Technology from Strathmore University, I\'ve rapidly established myself as a versatile developer, contributing to major organizations like Safaricom PLC and Becor Designs. My expertise spans from WordPress development to machine learning, and I\'m always driven by a commitment to solving real-world problems through technology.');
+                    setIntroGenerated(true);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const generateContent = async (section, prompt) => {
+                if (generatedContent[section] || loading) return;
+                
+                setLoading(true);
+                setActiveSection(section);
+
+                try {
+                    const response = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: 'llama-3.3-70b-versatile',
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: prompt }
+                            ],
+                            temperature: 0.8,
+                            max_tokens: 500
+                        })
+                    });
+
+                    const data = await response.json();
+                    setGeneratedContent(prev => ({
+                        ...prev,
+                        [section]: data.choices[0].message.content
+                    }));
+                } catch (error) {
+                    console.error('Error:', error);
+                    setGeneratedContent(prev => ({
+                        ...prev,
+                        [section]: 'Unable to generate content at this time. Please try again later.'
+                    }));
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const sections = [
+                {
+                    id: 'safaricom',
+                    title: 'Safaricom PLC Journey',
+                    icon: <Zap className="w-6 h-6" />,
+                    preview: 'Technology Intern working on data engineering and ML models',
+                    prompt: 'Tell the story of your internship at Safaricom PLC in first person. Focus on your work with data engineering, machine learning model development, and cloud technologies. Highlight specific achievements and what you learned. Make it engaging and technical.'
+                },
+                {
+                    id: 'becor',
+                    title: 'Becor Designs Expertise',
+                    icon: <Terminal className="w-6 h-6" />,
+                    preview: 'Junior Developer specializing in WordPress and web optimization',
+                    prompt: 'Describe your current role at Becor Designs in first person. Focus on your WordPress expertise, troubleshooting complex database and CDN issues, and designing modern websites. Emphasize your problem-solving skills and technical depth.'
+                },
+                {
+                    id: 'projects',
+                    title: 'Technical Arsenal',
+                    icon: <Sparkles className="w-6 h-6" />,
+                    preview: 'From C++ to React.js, exploring his diverse skill set',
+                    prompt: 'Explore your technical skills and how you apply them, speaking in first person. Discuss your programming languages (C++, Python, Java, Kotlin), web technologies (React.js, WordPress, PHP), and your learning journey through courses like Harvard\'s CS50 and Cisco Networking. Make it story-driven.'
+                },
+                {
+                    id: 'impact',
+                    title: 'Making an Impact',
+                    icon: <ChevronRight className="w-6 h-6" />,
+                    preview: 'From hospital systems to sustainable development initiatives',
+                    prompt: 'Tell the story of your broader impact in first person - your work at Kenyatta University Hospital improving patient data systems, your involvement with the Strathmore SDG Club, and your volunteer work. Show how you use technology to make a difference.'
+                }
+            ];
+
+            useEffect(() => {
+                generateIntro();
+            }, []);
+
+            return (
+                <div className="min-h-screen bg-white">
+                    {/* Header */}
+                    <header className="sticky top-0 bg-white/80 backdrop-blur-lg border-b border-gray-200 z-50">
+                        <div className="max-w-6xl mx-auto px-6 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                                        <span className="text-white font-bold text-lg">BO</span>
+                                    </div>
+                                    <div>
+                                        <h1 className="text-xl font-bold text-gray-900">Bernard Otieno</h1>
+                                        <p className="text-sm text-gray-600">IT Specialist & Developer</p>
+                                    </div>
+                                </div>
+                                <a href="mailto:Bernard20otieno01@gmail.com" 
+                                   className="px-6 py-2 bg-gradient-to-r from-red-600 via-black to-green-600 text-white rounded-lg font-medium hover:shadow-lg transition-all">
+                                    Contact
+                                </a>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Hero Section */}
+                    <section className="max-w-6xl mx-auto px-6 py-20">
+                        <div className="space-y-8">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-50 via-gray-50 to-green-50 rounded-full border border-gray-200">
+                                <Sparkles className="w-4 h-4" gradient={true} />
+                                <span className="text-sm font-medium bg-gradient-to-r from-red-600 via-black to-green-600 bg-clip-text text-transparent">
+                                    AI-Powered Portfolio
+                                </span>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <h2 className="text-6xl font-bold text-gray-900 leading-tight">
+                                    Building the Future,
+                                    <br />
+                                    <span className="bg-gradient-to-r from-red-600 via-black to-green-600 bg-clip-text text-transparent">
+                                        One Line at a Time
+                                    </span>
+                                </h2>
+                            </div>
+
+                            {loading && !introGenerated ? (
+                                <div className="flex items-center gap-3 text-gray-600">
+                                    <Loader2 className="w-5 h-5" gradient={true} />
+                                    <span>AI is crafting my story...</span>
+                                </div>
+                            ) : (
+                                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200">
+                                    <p className="text-lg text-gray-700 leading-relaxed whitespace-pre-line">
+                                        {introText || 'Loading...'}
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex flex-wrap gap-4 pt-4">
+                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
+                                    <span className="text-sm font-medium text-gray-700">React.js</span>
+                                </div>
+                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
+                                    <span className="text-sm font-medium text-gray-700">Python</span>
+                                </div>
+                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
+                                    <span className="text-sm font-medium text-gray-700">WordPress</span>
+                                </div>
+                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
+                                    <span className="text-sm font-medium text-gray-700">Data Engineering</span>
+                                </div>
+                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
+                                    <span className="text-sm font-medium text-gray-700">Machine Learning</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Education & Certifications */}
+                    <section className="max-w-6xl mx-auto px-6 py-16 bg-gray-50">
+                        <div className="max-w-4xl mx-auto">
+                            <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">Education & Certifications</h3>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                                    <div className="w-12 h-12 bg-gradient-to-r from-red-600 via-black to-green-600 rounded-lg flex items-center justify-center mb-4">
+                                        <span className="text-white font-bold">SU</span>
+                                    </div>
+                                    <h4 className="font-bold text-gray-900 mb-2">Strathmore University</h4>
+                                    <p className="text-gray-600">Bachelor of Business Information Technology</p>
+                                    <p className="text-sm text-gray-500 mt-1">2020 - 2023 | Grade: B</p>
+                                </div>
+                                
+                                <div className="bg-white rounded-xl p-6 border border-gray-200 space-y-3">
+                                    <h4 className="font-bold text-gray-900 mb-3">Certifications</h4>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-2 h-2 bg-red-600 rounded-full mt-2"></div>
+                                        <div>
+                                            <p className="font-medium text-gray-900">Harvard CS50</p>
+                                            <p className="text-sm text-gray-600">Computer Science Fundamentals</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2"></div>
+                                        <div>
+                                            <p className="font-medium text-gray-900">Cisco Networking</p>
+                                            <p className="text-sm text-gray-600">Network Routing & Protocols</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-2 h-2 bg-gray-900 rounded-full mt-2"></div>
+                                        <div>
+                                            <p className="font-medium text-gray-900">UI/UX Design</p>
+                                            <p className="text-sm text-gray-600">Tallinn University</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Interactive Sections */}
+                    <section className="max-w-6xl mx-auto px-6 py-16">
+                        <h3 className="text-3xl font-bold text-gray-900 mb-8">
+                            Explore the Journey
+                            <span className="block text-lg font-normal text-gray-600 mt-2">
+                                Click to let AI reveal more about each experience
+                            </span>
+                        </h3>
+
+                        {/* Stats Bar */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+                            <div className="bg-gradient-to-br from-red-50 to-white rounded-xl p-4 border border-red-100">
+                                <div className="text-2xl font-bold text-red-600">3+</div>
+                                <div className="text-sm text-gray-600">Years Experience</div>
+                            </div>
+                            <div className="bg-gradient-to-br from-green-50 to-white rounded-xl p-4 border border-green-100">
+                                <div className="text-2xl font-bold text-green-600">10+</div>
+                                <div className="text-sm text-gray-600">Technologies</div>
+                            </div>
+                            <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 border border-gray-200">
+                                <div className="text-2xl font-bold text-gray-900">5+</div>
+                                <div className="text-sm text-gray-600">Major Projects</div>
+                            </div>
+                            <div className="bg-gradient-to-br from-red-50 to-white rounded-xl p-4 border border-red-100">
+                                <div className="text-2xl font-bold text-red-600">100%</div>
+                                <div className="text-sm text-gray-600">Passion Driven</div>
+                            </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                            {sections.map((section) => (
+                                <div key={section.id} className="group">
+                                    <div 
+                                        onClick={() => !generatedContent[section.id] && generateContent(section.id, section.prompt)}
+                                        className={`bg-white rounded-2xl border-2 p-6 transition-all cursor-pointer ${
+                                            generatedContent[section.id] 
+                                                ? 'border-gray-200' 
+                                                : 'border-gray-200 hover:border-red-600 hover:shadow-xl'
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                                generatedContent[section.id]
+                                                    ? 'bg-gradient-to-r from-red-600 via-black to-green-600 text-white'
+                                                    : 'bg-gray-100 text-gray-600 group-hover:bg-gradient-to-r group-hover:from-red-600 group-hover:via-black group-hover:to-green-600 group-hover:text-white'
+                                            } transition-all`}>
+                                                {section.icon}
+                                            </div>
+                                            {!generatedContent[section.id] && (
+                                                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors" />
+                                            )}
+                                        </div>
+
+                                        <h4 className="text-xl font-bold text-gray-900 mb-2">{section.title}</h4>
+                                        
+                                        {loading && activeSection === section.id ? (
+                                            <div className="flex items-center gap-2 text-gray-600 py-4">
+                                                <Loader2 className="w-4 h-4" gradient={true} />
+                                                <span className="text-sm">AI is writing...</span>
+                                            </div>
+                                        ) : generatedContent[section.id] ? (
+                                            <div className="space-y-4">
+                                                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                                                    {generatedContent[section.id]}
+                                                </p>
+                                                <div className="pt-4 border-t border-gray-100">
+                                                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                        <Sparkles className="w-4 h-4" />
+                                                        <span>Generated by AI</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-500">{section.preview}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* Contact Section */}
+                    <section className="max-w-6xl mx-auto px-6 py-16">
+                        <div className="bg-gradient-to-r from-red-600 via-black to-green-600 rounded-3xl p-12 text-center text-white">
+                            <h3 className="text-3xl font-bold mb-4">Let's Build Something Amazing</h3>
+                            <p className="text-xl mb-8 text-red-100">
+                                Ready to collaborate on your next project?
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <a href="mailto:Bernard20otieno01@gmail.com" 
+                                   className="px-8 py-3 bg-white text-red-600 rounded-xl font-medium hover:shadow-xl transition-all">
+                                    Email Me
+                                </a>
+                                <a href="tel:0743941435" 
+                                   className="px-8 py-3 bg-white/10 backdrop-blur text-white rounded-xl font-medium hover:bg-white/20 transition-all border border-white/20">
+                                    Call: 0743941435
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Footer */}
+                    <footer className="border-t border-gray-200 py-8">
+                        <div className="max-w-6xl mx-auto px-6 text-center text-gray-600">
+                            <p>© 2024 Bernard Otieno. Powered by AI & Innovation.</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<Portfolio />, document.getElementById('root'));
+    </script>
+</body>
+</html>

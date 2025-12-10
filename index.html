@@ -52,6 +52,140 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // Animated Counter Component
+        const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
+            const [count, setCount] = useState(0);
+            const [hasAnimated, setHasAnimated] = useState(false);
+
+            useEffect(() => {
+                if (!hasAnimated) return;
+
+                let startTime;
+                const animate = (currentTime) => {
+                    if (!startTime) startTime = currentTime;
+                    const progress = (currentTime - startTime) / duration;
+
+                    if (progress < 1) {
+                        setCount(Math.floor(end * progress));
+                        requestAnimationFrame(animate);
+                    } else {
+                        setCount(end);
+                    }
+                };
+
+                requestAnimationFrame(animate);
+            }, [hasAnimated, end, duration]);
+
+            useEffect(() => {
+                const observer = new IntersectionObserver(
+                    (entries) => {
+                        if (entries[0].isIntersecting && !hasAnimated) {
+                            setHasAnimated(true);
+                        }
+                    },
+                    { threshold: 0.5 }
+                );
+
+                const element = document.getElementById('stats-counter');
+                if (element) observer.observe(element);
+
+                return () => observer.disconnect();
+            }, [hasAnimated]);
+
+            return <span>{count}{suffix}</span>;
+        };
+
+        // Confetti Component
+        const Confetti = () => {
+            const colors = ['#dc2626', '#000000', '#16a34a']; // Kenyan flag colors
+            const confettiPieces = Array.from({ length: 50 }, (_, i) => ({
+                id: i,
+                left: Math.random() * 100,
+                delay: Math.random() * 0.5,
+                duration: 2 + Math.random() * 2,
+                color: colors[Math.floor(Math.random() * colors.length)]
+            }));
+
+            return (
+                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                    {confettiPieces.map((piece) => (
+                        <div
+                            key={piece.id}
+                            className="absolute w-2 h-2 rounded-full"
+                            style={{
+                                left: `${piece.left}%`,
+                                top: '-10px',
+                                backgroundColor: piece.color,
+                                animation: `confetti-fall ${piece.duration}s ease-in forwards`,
+                                animationDelay: `${piece.delay}s`
+                            }}
+                        />
+                    ))}
+                    <style>{`
+                        @keyframes confetti-fall {
+                            to {
+                                transform: translateY(100vh) rotate(360deg);
+                                opacity: 0;
+                            }
+                        }
+                    `}</style>
+                </div>
+            );
+        };
+
+        // Skill Bar Component
+        const SkillBar = ({ skill, level, color }) => {
+            const [width, setWidth] = useState(0);
+            const [isHovered, setIsHovered] = useState(false);
+
+            useEffect(() => {
+                const timer = setTimeout(() => setWidth(level), 200);
+                return () => clearTimeout(timer);
+            }, [level]);
+
+            const getColorClasses = () => {
+                switch(color) {
+                    case 'red': return 'bg-red-600';
+                    case 'green': return 'bg-green-600';
+                    case 'black': return 'bg-gray-900';
+                    default: return 'bg-gray-600';
+                }
+            };
+
+            const getLevelText = () => {
+                if (level >= 90) return 'Expert';
+                if (level >= 75) return 'Advanced';
+                if (level >= 60) return 'Intermediate';
+                return 'Beginner';
+            };
+
+            return (
+                <div 
+                    className="group cursor-default"
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                >
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-gray-700">{skill}</span>
+                        <div className={`transition-all duration-200 ${
+                            isHovered ? 'opacity-100' : 'opacity-0'
+                        }`}>
+                            <span className="text-xs font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                                {getLevelText()}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div 
+                            className={`h-full ${getColorClasses()} rounded-full transition-all duration-1000 ease-out group-hover:shadow-lg`}
+                            style={{ width: `${width}%` }}
+                        >
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // Lucide React Icons (inline SVG)
                     const Sparkles = ({ className = "w-6 h-6", gradient = false }) => (
             <svg className={className} fill="none" stroke={gradient ? "url(#kenyan-gradient)" : "currentColor"} viewBox="0 0 24 24">
@@ -137,8 +271,27 @@
             const [isVisible, setIsVisible] = useState({});
             const [typingText, setTypingText] = useState({});
             const [isTyping, setIsTyping] = useState({});
+            const [logoClicks, setLogoClicks] = useState(0);
+            const [showConfetti, setShowConfetti] = useState(false);
 
             const WORKER_URL = 'https://bernard-portfolio-api.bernard20otieno01.workers.dev/';
+
+            // Easter egg: Logo click handler
+            const handleLogoClick = () => {
+                const newClicks = logoClicks + 1;
+                setLogoClicks(newClicks);
+                
+                if (newClicks === 3) {
+                    triggerKenyanPride();
+                    setLogoClicks(0);
+                }
+            };
+
+            // Kenyan pride confetti animation
+            const triggerKenyanPride = () => {
+                setShowConfetti(true);
+                setTimeout(() => setShowConfetti(false), 4000);
+            };
 
             // Typing animation effect
             const typeText = (text, sectionId) => {
@@ -201,7 +354,7 @@ MY ACHIEVEMENTS:
 - Captained my volleyball team to semifinals
 - Earned Data Protection certification
 
-Write 2-3 compelling paragraphs in first person that tell my story in an inspiring, professional way. Focus on my journey, technical expertise, and problem-solving abilities. Make it feel personal and engaging.`;
+IMPORTANT: Keep your response SHORT and punchy. Write ONLY 2-3 sentences maximum. Be direct and impactful. No fluff.`;
 
             const generateIntro = async () => {
                 if (introGenerated || loading) return;
@@ -217,10 +370,10 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                             model: 'llama-3.3-70b-versatile',
                             messages: [
                                 { role: 'system', content: systemPrompt },
-                                { role: 'user', content: 'Write an engaging introduction about yourself as an IT specialist and developer. Focus on your passion for technology, your journey from Strathmore University to working at companies like Safaricom and Becor Designs, and what drives you as a developer. Write in first person.' }
+                                { role: 'user', content: 'Write a brief 2-3 sentence introduction about yourself as an IT specialist and developer. Be punchy and direct. Focus on your current role and what drives you.' }
                             ],
                             temperature: 0.8,
-                            max_tokens: 400
+                            max_tokens: 150
                         })
                     });
 
@@ -229,7 +382,7 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                     setIntroGenerated(true);
                 } catch (error) {
                     console.error('Error:', error);
-                    setIntroText('I\'m an innovative IT specialist with a passion for building transformative digital solutions. With my Bachelor\'s degree in Business Information Technology from Strathmore University, I\'ve rapidly established myself as a versatile developer, contributing to major organizations like Safaricom PLC and Becor Designs. My expertise spans from WordPress development to machine learning, and I\'m always driven by a commitment to solving real-world problems through technology.');
+                    setIntroText('I\'m a developer passionate about building scalable web solutions and leveraging data to solve real problems. Currently optimizing WordPress systems at Becor Designs, with experience in ML and data engineering from Safaricom PLC.');
                     setIntroGenerated(true);
                 } finally {
                     setLoading(false);
@@ -255,7 +408,7 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                                 { role: 'user', content: prompt }
                             ],
                             temperature: 0.8,
-                            max_tokens: 500
+                            max_tokens: 200
                         })
                     });
 
@@ -287,28 +440,79 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                     title: 'Safaricom PLC Journey',
                     icon: <Zap className="w-6 h-6" />,
                     preview: 'Technology Intern working on data engineering and ML models',
-                    prompt: 'Tell the story of your internship at Safaricom PLC in first person. Focus on your work with data engineering, machine learning model development, and cloud technologies. Highlight specific achievements and what you learned. Make it engaging and technical.'
+                    prompt: 'In 2-3 short sentences, describe your Safaricom internship. Focus on the most impressive achievement. Be direct and punchy.'
                 },
                 {
                     id: 'becor',
                     title: 'Becor Designs Expertise',
                     icon: <Terminal className="w-6 h-6" />,
                     preview: 'Junior Developer specializing in WordPress and web optimization',
-                    prompt: 'Describe your current role at Becor Designs in first person. Focus on your WordPress expertise, troubleshooting complex database and CDN issues, and designing modern websites. Emphasize your problem-solving skills and technical depth.'
+                    prompt: 'In 2-3 short sentences, describe your current role at Becor Designs. Focus on your key responsibility and biggest impact. Be direct.'
                 },
                 {
                     id: 'projects',
                     title: 'Technical Arsenal',
                     icon: <Sparkles className="w-6 h-6" />,
                     preview: 'From C++ to React.js, exploring his diverse skill set',
-                    prompt: 'Explore your technical skills and how you apply them, speaking in first person. Discuss your programming languages (C++, Python, Java, Kotlin), web technologies (React.js, WordPress, PHP), and your learning journey through courses like Harvard\'s CS50 and Cisco Networking. Make it story-driven.'
+                    prompt: 'In 2-3 short sentences, talk about your technical skills and learning journey. Be punchy and highlight what makes you versatile.'
                 },
                 {
                     id: 'impact',
                     title: 'Making an Impact',
                     icon: <ChevronRight className="w-6 h-6" />,
                     preview: 'From hospital systems to sustainable development initiatives',
-                    prompt: 'Tell the story of your broader impact in first person - your work at Kenyatta University Hospital improving patient data systems, your involvement with the Strathmore SDG Club, and your volunteer work. Show how you use technology to make a difference.'
+                    prompt: 'In 2-3 short sentences, describe the impact you\'ve made through your work (hospital systems, SDG club, volunteering). Be direct and meaningful.'
+                }
+            ];
+
+            const projects = [
+                {
+                    id: 'data-dashboard',
+                    title: 'Data Analytics Dashboard',
+                    category: 'Data Engineering',
+                    tech: ['Python', 'Data Visualization', 'Analytics'],
+                    images: ['images/image1.png', 'images/image2.png'],
+                    prompt: 'In 2-3 sentences, describe building data analytics dashboards with transaction visualizations and merchant analysis. Focus on impact and technical complexity.'
+                },
+                {
+                    id: 'banking-system',
+                    title: 'Banking Service Platform',
+                    category: 'Full-Stack Development',
+                    tech: ['Laravel', 'MySQL', 'Authentication'],
+                    images: ['images/image3.png'],
+                    prompt: 'In 2-3 sentences, describe building a secure banking service platform with loan applications, payment processing, and 2FA. Emphasize security and user experience.'
+                },
+                {
+                    id: 'kilimoshield',
+                    title: 'KilimoShield - AgriTech Platform',
+                    category: 'WordPress Development',
+                    tech: ['WordPress', 'UI/UX', 'Responsive Design'],
+                    images: ['images/image4.png'],
+                    prompt: 'In 2-3 sentences, describe building KilimoShield, an agricultural insurance platform empowering farmers with technology. Focus on impact and modern design.'
+                },
+                {
+                    id: 'serity-realestate',
+                    title: 'Serity Real Estate Group',
+                    category: 'WordPress Development',
+                    tech: ['WordPress', 'Custom Theme', 'SEO'],
+                    images: ['images/image5.png'],
+                    prompt: 'In 2-3 sentences, describe building a professional real estate website with custom WordPress theme. Highlight design sophistication and performance.'
+                },
+                {
+                    id: 'data-pipeline',
+                    title: 'Data Pipeline Architecture',
+                    category: 'Data Engineering',
+                    tech: ['ETL', 'Data Modeling', 'Automation'],
+                    images: ['images/image6.png'],
+                    prompt: 'In 2-3 sentences, describe building automated data pipelines with ETL processes and data modeling. Focus on efficiency and scalability.'
+                },
+                {
+                    id: 'ai-portfolio',
+                    title: 'AI-Powered Portfolio',
+                    category: 'Full-Stack + AI',
+                    tech: ['React', 'Groq API', 'Cloudflare Workers'],
+                    images: [],
+                    prompt: 'In 2-3 sentences, describe building this AI-powered portfolio website with real-time content generation, typing animations, and serverless architecture. Highlight the innovation.'
                 }
             ];
 
@@ -318,6 +522,9 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
 
             return (
                 <div className="min-h-screen bg-white">
+                    {/* Confetti Easter Egg */}
+                    {showConfetti && <Confetti />}
+
                     {/* Header */}
                     <header className="sticky top-0 bg-white/80 backdrop-blur-lg border-b border-gray-200 z-50">
                         <div className="max-w-6xl mx-auto px-6 py-4">
@@ -359,13 +566,41 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                                 </h2>
                             </div>
 
+                            {/* Quick Stats */}
+                            <div id="stats-counter" className="grid grid-cols-2 md:grid-cols-4 gap-4 py-8 fade-in-up stagger-2">
+                                <div className="text-center">
+                                    <div className="text-4xl font-bold bg-gradient-to-r from-red-600 to-red-400 bg-clip-text text-transparent">
+                                        <AnimatedCounter end={3} suffix="+" />
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">Years Coding</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
+                                        <AnimatedCounter end={15} suffix="+" />
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">Technologies</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                                        <AnimatedCounter end={25} suffix="+" />
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">Projects Built</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-4xl font-bold bg-gradient-to-r from-red-600 to-red-400 bg-clip-text text-transparent">
+                                        <AnimatedCounter end={100} suffix="%" />
+                                    </div>
+                                    <div className="text-sm text-gray-600 mt-1">Passion</div>
+                                </div>
+                            </div>
+
                             {loading && !introGenerated ? (
                                 <div className="flex items-center gap-3 text-gray-600 fade-in-up stagger-2">
                                     <Loader2 className="w-5 h-5" gradient={true} />
                                     <span>AI is crafting my story...</span>
                                 </div>
                             ) : (
-                                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200 fade-in-up stagger-2">
+                                <div className="bg-gray-50 rounded-2xl p-8 border border-gray-200 fade-in-up stagger-3">
                                     <p className="text-lg text-gray-700 leading-relaxed whitespace-pre-line">
                                         {introText || 'Loading...'}
                                     </p>
@@ -373,20 +608,151 @@ Write 2-3 compelling paragraphs in first person that tell my story in an inspiri
                             )}
 
                             <div className="flex flex-wrap gap-4 pt-4 fade-in-up stagger-3">
-                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
-                                    <span className="text-sm font-medium text-gray-700">React.js</span>
+                                {/* Skills will be displayed in the dedicated section below */}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Featured Projects Section */}
+                    <section id="projects-section" data-animate className="max-w-6xl mx-auto px-6 py-16 bg-gray-50">
+                        <h3 className={`text-3xl font-bold text-gray-900 mb-3 text-center ${isVisible['projects-section'] ? 'fade-in-up' : 'opacity-0'}`}>
+                            Featured Projects
+                        </h3>
+                        <p className={`text-gray-600 text-center mb-12 ${isVisible['projects-section'] ? 'fade-in-up stagger-1' : 'opacity-0'}`}>
+                            Click any project to learn more about it
+                        </p>
+
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {projects.map((project, index) => (
+                                <div 
+                                    key={project.id} 
+                                    className={`group ${isVisible['projects-section'] ? 'fade-in-up' : 'opacity-0'}`}
+                                    style={{animationDelay: `${0.2 + index * 0.1}s`}}
+                                >
+                                    <div 
+                                        onClick={() => !generatedContent[project.id] && generateContent(project.id, project.prompt)}
+                                        className={`bg-white rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${
+                                            generatedContent[project.id] 
+                                                ? 'border-gray-200' 
+                                                : 'border-gray-200 hover:border-red-600 hover:shadow-xl'
+                                        }`}
+                                    >
+                                        {/* Project Image */}
+                                        {project.images.length > 0 ? (
+                                            <div className="relative h-48 overflow-hidden bg-gray-100">
+                                                <img 
+                                                    src={project.images[0]} 
+                                                    alt={project.title}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                />
+                                                <div className="absolute top-3 right-3 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-gray-900">
+                                                    {project.category}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="relative h-48 bg-gradient-to-br from-red-600 via-black to-green-600 flex items-center justify-center">
+                                                <Sparkles className="w-16 h-16 text-white opacity-50" />
+                                                <div className="absolute top-3 right-3 px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-medium text-gray-900">
+                                                    {project.category}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Project Content */}
+                                        <div className="p-6">
+                                            <h4 className="text-lg font-bold text-gray-900 mb-2">{project.title}</h4>
+                                            
+                                            {/* Tech Stack */}
+                                            <div className="flex flex-wrap gap-2 mb-4">
+                                                {project.tech.map((tech, i) => (
+                                                    <span key={i} className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                                                        {tech}
+                                                    </span>
+                                                ))}
+                                            </div>
+
+                                            {/* AI Generated Content */}
+                                            {loading && activeSection === project.id ? (
+                                                <div className="flex items-center gap-2 text-gray-600 py-2">
+                                                    <Loader2 className="w-4 h-4" gradient={true} />
+                                                    <span className="text-sm">AI is writing...</span>
+                                                </div>
+                                            ) : generatedContent[project.id] ? (
+                                                <div className="space-y-3">
+                                                    <p className="text-sm text-gray-700 leading-relaxed">
+                                                        {typingText[project.id] || generatedContent[project.id]}
+                                                        {isTyping[project.id] && <span className="inline-block w-1 h-4 bg-gray-700 ml-1 animate-pulse"></span>}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                        <Sparkles className="w-3 h-3" />
+                                                        <span>AI Generated</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <button className="text-sm text-red-600 font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+                                                    Learn More <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
-                                    <span className="text-sm font-medium text-gray-700">Python</span>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* Interactive Skills Visualization */}
+                    <section id="skills-section" data-animate className="max-w-6xl mx-auto px-6 py-16">
+                        <div className="max-w-4xl mx-auto">
+                            <h3 className={`text-3xl font-bold text-gray-900 mb-3 text-center ${isVisible['skills-section'] ? 'fade-in-up' : 'opacity-0'}`}>
+                                Technical Expertise
+                            </h3>
+                            <p className={`text-gray-600 text-center mb-12 ${isVisible['skills-section'] ? 'fade-in-up stagger-1' : 'opacity-0'}`}>
+                                Hover to see proficiency levels
+                            </p>
+
+                            <div className="grid md:grid-cols-2 gap-8">
+                                {/* Left Column */}
+                                <div className="space-y-6">
+                                    <div className={`bg-white rounded-xl p-6 border border-gray-200 ${isVisible['skills-section'] ? 'fade-in-up stagger-2' : 'opacity-0'}`}>
+                                        <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Web Development</h4>
+                                        <div className="space-y-4">
+                                            <SkillBar skill="WordPress" level={95} color="red" />
+                                            <SkillBar skill="React.js" level={85} color="green" />
+                                            <SkillBar skill="JavaScript" level={90} color="black" />
+                                            <SkillBar skill="HTML/CSS" level={95} color="red" />
+                                        </div>
+                                    </div>
+
+                                    <div className={`bg-white rounded-xl p-6 border border-gray-200 ${isVisible['skills-section'] ? 'fade-in-up stagger-4' : 'opacity-0'}`}>
+                                        <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Data & Cloud</h4>
+                                        <div className="space-y-4">
+                                            <SkillBar skill="Data Engineering" level={80} color="green" />
+                                            <SkillBar skill="Machine Learning" level={75} color="black" />
+                                            <SkillBar skill="Cloud Technologies" level={70} color="red" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
-                                    <span className="text-sm font-medium text-gray-700">WordPress</span>
-                                </div>
-                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
-                                    <span className="text-sm font-medium text-gray-700">Data Engineering</span>
-                                </div>
-                                <div className="px-4 py-2 bg-gray-100 rounded-lg">
-                                    <span className="text-sm font-medium text-gray-700">Machine Learning</span>
+
+                                {/* Right Column */}
+                                <div className="space-y-6">
+                                    <div className={`bg-white rounded-xl p-6 border border-gray-200 ${isVisible['skills-section'] ? 'fade-in-up stagger-3' : 'opacity-0'}`}>
+                                        <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Programming</h4>
+                                        <div className="space-y-4">
+                                            <SkillBar skill="Python" level={85} color="red" />
+                                            <SkillBar skill="Java" level={75} color="green" />
+                                            <SkillBar skill="Kotlin" level={75} color="black" />
+                                            <SkillBar skill="C++" level={70} color="red" />
+                                        </div>
+                                    </div>
+
+                                    <div className={`bg-white rounded-xl p-6 border border-gray-200 ${isVisible['skills-section'] ? 'fade-in-up stagger-5' : 'opacity-0'}`}>
+                                        <h4 className="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Other Expertise</h4>
+                                        <div className="space-y-4">
+                                            <SkillBar skill="Cisco Networking" level={75} color="green" />
+                                            <SkillBar skill="UI/UX Design" level={70} color="black" />
+                                            <SkillBar skill="Database Management" level={85} color="red" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

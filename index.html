@@ -368,7 +368,7 @@ IMPORTANT: Keep your response SHORT and punchy. Write ONLY 2-3 sentences maximum
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            model: 'Llama 3.2 3B',
+                            model: 'llama-3.1-8b-instant',
                             messages: [
                                 { role: 'system', content: systemPrompt },
                                 { role: 'user', content: 'Write a brief 2-3 sentence introduction about yourself as an IT specialist and developer. Be punchy and direct. Focus on your current role and what drives you.' }
@@ -379,7 +379,11 @@ IMPORTANT: Keep your response SHORT and punchy. Write ONLY 2-3 sentences maximum
                     });
 
                     const data = await response.json();
-                    setIntroText(data.choices[0].message.content);
+                    if (data.choices && data.choices[0]) {
+                        setIntroText(data.choices[0].message.content);
+                    } else {
+                        throw new Error(data.error?.message || 'Invalid API response format');
+                    }
                     setIntroGenerated(true);
                 } catch (error) {
                     console.error('Error:', error);
@@ -403,7 +407,7 @@ IMPORTANT: Keep your response SHORT and punchy. Write ONLY 2-3 sentences maximum
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            model: 'llama-3.3-70b-versatile',
+                            model: 'llama-3.1-8b-instant',
                             messages: [
                                 { role: 'system', content: systemPrompt },
                                 { role: 'user', content: prompt }
@@ -414,14 +418,16 @@ IMPORTANT: Keep your response SHORT and punchy. Write ONLY 2-3 sentences maximum
                     });
 
                     const data = await response.json();
-                    const content = data.choices[0].message.content;
-                    setGeneratedContent(prev => ({
-                        ...prev,
-                        [section]: content
-                    }));
-                    
-                    // Start typing animation
-                    typeText(content, section);
+                    if (data.choices && data.choices[0]) {
+                        const content = data.choices[0].message.content;
+                        setGeneratedContent(prev => ({
+                            ...prev,
+                            [section]: content
+                        }));
+                        typeText(content, section);
+                    } else {
+                        throw new Error(data.error?.message || 'Invalid API response format');
+                    }
                 } catch (error) {
                     console.error('Error:', error);
                     const errorMsg = 'Unable to generate content at this time. Please try again later.';
